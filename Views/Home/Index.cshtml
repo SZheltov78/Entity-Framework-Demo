@@ -1,0 +1,155 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>EF DEMO</title>
+    <style>
+        *{
+            padding:0;
+            margin:0;
+        }
+        .container{
+            width: 400px;
+            padding: 5px;
+            margin: 50px;
+            border:dotted 1px;             
+        }
+        .outputContainer{
+            padding-top: 5px;           
+        }
+
+    </style>
+</head>
+<body>    
+    <div class="container">
+        <p>Fetch data</p>
+        <input type="button" onclick="Load()" value="Load" />
+        <input type="button" onclick="Add()" value="Add New Row" />
+
+        <div class="outputContainer" id='outputContainer'></div>
+    </div>
+    
+    <div id="rowPattern" style="display:none">
+        <input onchange="Update(this)" name="Name" value="#Name" _id="#Id" />
+        <input onchange="Update(this)" name="Phone" value="#Phone" _id="#Id" />
+        <input onclick="Delete(this)" type="button" value="X" _id="#Id" />
+    </div>
+
+    <script>
+        function Load() {
+            fetch('Home/Load').
+                then(response => response.json()).
+                then(result => {
+                    if (result.result != 'ok') {
+                        alert(result.result);
+                    }
+                    else {
+                        CreateTable(result.data, rowPattern);
+                    }
+                });
+        }
+
+        function Add() {
+            fetch('Home/Add').
+                then(response => response.json()).
+                then(result => {
+                    if (result.result != 'ok') {
+                        alert(result.result);
+                    }
+                    else {
+                        CreateTable(result.data, rowPattern);
+                    }
+                });
+        }
+
+        function Delete(e) {
+            //prepare data
+            var data = {
+                'Id': e.getAttribute('_id'),
+                'Name': e.getAttribute('name'),
+                'Value': e.value
+            };
+            //send data
+            fetch('Home/Delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).
+                then(response => response.json()).
+                then(result => {
+                    if (result.result != 'ok') {
+                        alert(result.result);
+                    }
+                });
+
+            //delete row
+            //get all inputs
+            var inputs = document.getElementsByTagName('input');
+            //array for elements
+            var toDelete = [];
+            //we can't delete elevents in a cicle
+            for (var input of inputs) {
+                if (input.getAttribute('_id') == data.Id) toDelete.push(input);
+            }
+            //delete
+            for (var del of toDelete) {
+                del.remove();
+            }
+
+        }
+
+        function Update(e) {
+            //prepare data
+            var data = {
+                'Id': e.getAttribute('_id'),
+                'Name': e.getAttribute('name'),
+                'Value': e.value
+            };
+            //send data
+            fetch('Home/Update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).
+                then(response => response.json()).
+                then(result => {
+                    if (result.result != 'ok') {
+                        alert(result.result);
+                    }
+                });
+        }
+        
+        function CreateTable(data, pattern) {
+            var table = '';
+            data.forEach(element => {
+                row = pattern.outerHTML;
+                row = replace(row, '#Name', element.name);
+                row = replace(row, '#Phone', element.phone);
+                row = replace(row, '#Id', element.id);
+                row = replace(row, 'rowPattern', '');
+                table += row;
+            });
+            show(table, outputContainer);
+        }
+
+        function replace(str, find, replace) {
+            return str.split(find).join(replace);
+        }
+
+        function show(vHtml, inner) {
+            //clear old table
+            while (outputContainer.firstChild) {
+                outputContainer.removeChild(outputContainer.firstChild);
+            }
+            //add new table
+            vHtml = vHtml.split('none').join('block');
+            inner.innerHTML = vHtml;
+        }
+
+    </script>
+</body>
+</html>
+
